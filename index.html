@@ -37,18 +37,16 @@
 </style>
 </head>
 <body>
-
   <nav class="nav-sidebar">
     <div class="tab active" id="btn-courses" onclick="changerOnglet('courses')">🛒<span class="tab-label">Courses</span></div>
     <div class="tab" id="btn-menu" onclick="changerOnglet('menu')">🍽️<span class="tab-label">Menu</span></div>
   </nav>
-
   <main class="main-content">
     <header><h1>Repas</h1><div class="sync-led"><div id="statusLed" class="led"></div><span id="statusTxt">SYNC</span></div></header>
     <div id="section-courses">
       <div class="card">
         <div class="stitle">Nouveau produit</div>
-        <input type="text" id="artNom" placeholder="Pommes, Poulet, Lait..." autocomplete="off">
+        <input type="text" id="artNom" placeholder="Nom de l'article..." autocomplete="off">
         <div style="display:flex; gap:10px;"><input type="text" id="artQty" placeholder="Qté" style="flex:0.4"><select id="artCat" style="flex:1">
           <option value="fruits">🥦 Fruits & Légumes</option><option value="viande">🥩 Boucherie</option><option value="frais">🧀 Produits Frais</option><option value="epicerie">🥫 Épicerie</option><option value="boissons">🥤 Boissons</option><option value="hygiene">🧴 Maison</option><option value="animaux">🐾 Animaux</option><option value="autre" selected>📦 Autre</option>
         </select></div>
@@ -63,23 +61,64 @@
   var db = firebase.database();
 
   const RAYONS = { fruits: {e:'🥦',l:'Fruits & Légumes',c:'#4ade80'}, viande: {e:'🥩',l:'Boucherie',c:'#f87171'}, frais: {e:'🧀',l:'Produits Frais',c:'#fbbf24'}, epicerie: {e:'🥫',l:'Épicerie',c:'#a78bfa'}, boissons: {e:'🥤',l:'Boissons',c:'#60a5fa'}, hygiene: {e:'🧴',l:'Maison',c:'#f472b6'}, animaux: {e:'🐾',l:'Animaux',c:'#fb923c'}, autre: {e:'📦',l:'Autre',c:'#94a3b8'} };
-
   const DICTIONNAIRE = {
-    fruits: ['pomme','banane','tomate','salade','carotte','oignon','poireau','courgette','patate','pomme de terre','ail','echalote','avocat','citron','fraise','orange','poivron','concombre','brocoli','champignon','radis','asperge','aubergine','chou','epinard','haricot','lentille','melon','pasteque','peche','poire','raisin','kiwi','ananas','abricot','cerise','clementine','nectarine','prune','datte','figue','mangue'],
-    viande: ['poulet','steak','lardons','jambon','viande','boeuf','porc','saucisse','dinde','veau','agneau','haché','nuggets','salami','chorizo','pate','rillettes','magret','canard','pouls','poisson','saumon','cabillaud','thon','crevette','crabe','moule','huitre','gambas','truite','colin'],
-    frais: ['lait','oeuf','yaourt','fromage','beurre','crème','creme','emmental','gruyere','parmesan','mozzarella','camembert','comté','roquefort','chevre','beurre doux','beurre demi-sel','creme fraiche','margarine','skyr','petit suisse','fromage blanc','levure'],
-    epicerie: ['pates','riz','sel','sucre','farine','huile','conserve','gateau','biscuit','chocolat','pate a tartiner','miel','confiture','cereales','chips','apero','mayonnaise','ketchup','moutarde','vinaigre','pesto','sauce tomate','couscous','quinoa','pates alphabet','spaghetti','coquillette','penne','fusilli','tortellini','lasagne','farfalle','bouillon','epices','curry','poivre','sucre vanillé','levure chimique','noix','amande','noisette','cacahuete','olive','cornichon'],
-    boissons: ['eau','jus','soda','bière','biere','vin','café','cafe','thé','the','coca','perrier','sirop','limonade','iced tea','tisane','capsule','lait de soja','lait d amande','sprite','fanta','oasis'],
-    hygiene: ['savon','PQ','papier','lessive','shampoing','dentifrice','douche','deodorant','rasoir','mouchoir','essuie-tout','sopalin','liquide vaisselle','eponge','sac poubelle','nettoyant','javel','adoucissant','couches','coton','serviette','tampon','brosse a dent','gel','cire'],
-    animaux: ['croquettes','pâtée','litière','chat','chien','lapin','graine','os','friandise']
+    fruits: ['pomme','banane','tomate','salade','carotte','oignon','poireau','courgette','patate','ail','echalote','avocat','citron','fraise','orange','poivron','concombre'],
+    viande: ['poulet','steak','lardons','jambon','viande','boeuf','porc','saucisse','dinde','poisson','saumon','crevette'],
+    frais: ['lait','oeuf','yaourt','fromage','beurre','crème','creme','emmental','gruyere','mozzarella','skyr'],
+    epicerie: ['pates','riz','sel','sucre','farine','huile','conserve','gateau','biscuit','chocolat','chips','apero','mayonnaise'],
+    boissons: ['eau','jus','soda','bière','biere','vin','café','cafe','thé','the','coca'],
+    hygiene: ['savon','PQ','papier','lessive','shampoing','dentifrice','douche','sopalin','poubelle'],
+    animaux: ['croquettes','pâtée','litière','chat','chien']
   };
 
+  // 1. AUTO-DETECTION CATEGORIE
   document.getElementById('artNom').addEventListener('input', (e) => {
     const s = e.target.value.toLowerCase();
     for (const [c, m] of Object.entries(DICTIONNAIRE)) {
       if (m.some(mot => s.includes(mot))) { document.getElementById('artCat').value = c; break; }
     }
   });
+
+  // 2. GESTION DU BADGE (VISUEL SUR L'ICONE)
+  function updateAppBadge(count) {
+    if ('setAppBadge' in navigator) {
+      if (count > 0) navigator.setAppBadge(count);
+      else navigator.clearAppBadge();
+    }
+  }
+
+  // 3. RECUPERATION ET RENDER
+  db.ref('maison_courses').on('value', snap => {
+    let grp = {}; Object.keys(RAYONS).forEach(k => grp[k] = "");
+    let totalItems = 0;
+
+    if(snap.exists()){
+      snap.forEach(c => {
+        const i = c.val(); 
+        if(!i.checked) totalItems++; // On compte seulement ce qui reste à acheter
+        const k = c.key; 
+        const cat = i.cat||'autre';
+        grp[cat] += `<div class="item ${i.checked?'done':''}">
+          <input type="checkbox" ${i.checked?'checked':''} onchange="db.ref('maison_courses/${k}').update({checked:!${i.checked}})" style="width:24px;height:24px;flex-shrink:0;">
+          <span class="iname">${i.nom}${i.qty?' <small style="color:var(--text-dim)">× '+i.qty+'</small>':''}</span>
+          <button class="btn-del" onclick="db.ref('maison_courses/${k}').remove()">✕</button></div>`;
+      });
+    }
+
+    updateAppBadge(totalItems); // Met à jour le badge sur l'icône écran d'accueil
+
+    let h = ""; Object.keys(RAYONS).forEach(k => { if(grp[k]!=="") h += `<div class="rayon-title" style="color:${RAYONS[k].c}">${RAYONS[k].e} ${RAYONS[k].l}</div>` + grp[k]; });
+    document.getElementById('liste').innerHTML = h || '<p style="text-align:center;padding:20px;">Vide</p>';
+  });
+
+  // 4. FONCTIONS DE BASE
+  function ajouterArticle(){
+    const n = document.getElementById('artNom'); const q = document.getElementById('artQty'); const c = document.getElementById('artCat');
+    if(!n.value.trim()) return;
+    db.ref('maison_courses').push({nom:n.value.trim(), qty:q.value, cat:c.value, checked:false}).then(() => {
+      n.value=''; q.value=''; c.value='autre'; n.focus();
+    });
+  }
 
   function changerOnglet(t) {
     document.getElementById('section-courses').style.display = t==='courses'?'block':'none';
@@ -91,41 +130,13 @@
 
   db.ref(".info/connected").on("value", s => {
     document.getElementById('statusLed').className = s.val()?"led online":"led";
-    document.getElementById('statusTxt').textContent = s.val()?"CLOUD OK":"OFFLINE";
   });
-
-  db.ref('maison_courses').on('value', snap => {
-    let grp = {}; Object.keys(RAYONS).forEach(k => grp[k] = "");
-    if(snap.exists()){
-      snap.forEach(c => {
-        const i = c.val(); const k = c.key; const cat = i.cat||'autre';
-        grp[cat] += `<div class="item ${i.checked?'done':''}">
-          <input type="checkbox" ${i.checked?'checked':''} onchange="db.ref('maison_courses/${k}').update({checked:!${i.checked}})" style="width:24px;height:24px;flex-shrink:0;">
-          <span class="iname">${i.nom}${i.qty?' <small style="color:var(--text-dim)">× '+i.qty+'</small>':''}</span>
-          <button class="btn-del" onclick="db.ref('maison_courses/${k}').remove()">✕</button></div>`;
-      });
-    }
-    let h = ""; Object.keys(RAYONS).forEach(k => { if(grp[k]!=="") h += `<div class="rayon-title" style="color:${RAYONS[k].c}">${RAYONS[k].e} ${RAYONS[k].l}</div>` + grp[k]; });
-    const m = document.querySelector('.main-content'); const p = m.scrollTop;
-    document.getElementById('liste').innerHTML = h || '<p style="text-align:center;padding:20px;">Vide</p>';
-    m.scrollTop = p;
-  });
-
-  function ajouterArticle(){
-    const n = document.getElementById('artNom'); const q = document.getElementById('artQty'); const c = document.getElementById('artCat');
-    if(!n.value.trim()) return;
-    db.ref('maison_courses').push({nom:n.value.trim(), qty:q.value, cat:c.value, checked:false}).then(() => {
-      n.value=''; q.value=''; c.value='autre'; n.focus();
-    });
-  }
 
   function renderMenu() {
     db.ref('maison_menu').once('value', s => {
       let d = s.val() || {}; let h = '';
       ['Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi','Dimanche'].forEach((j,i) => {
-        h += `<div class="repas-card"><div class="stitle">${j}</div>
-        <input id="m${i}" value="${d[j]?.midi||''}" placeholder="🌞 MIDI">
-        <input id="s${i}" value="${d[j]?.soir||''}" placeholder="🌙 SOIR"></div>`;
+        h += `<div class="repas-card"><div class="stitle">${j}</div><input id="m${i}" value="${d[j]?.midi||''}" placeholder="🌞 MIDI"><input id="s${i}" value="${d[j]?.soir||''}" placeholder="🌙 SOIR"></div>`;
       });
       document.getElementById('semaineGrid').innerHTML = h;
     });
@@ -135,7 +146,7 @@
     ['Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi','Dimanche'].forEach((j,i) => {
       db.ref('maison_menu/'+j).set({midi:document.getElementById('m'+i).value, soir:document.getElementById('s'+i).value});
     });
-    alert('Enregistré !');
+    alert('Menu enregistré !');
   }
 </script>
 </body>
