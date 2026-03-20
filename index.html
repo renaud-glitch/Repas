@@ -11,66 +11,27 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <style>
-  :root { 
-    --bg: #0f172a; 
-    --card: rgba(30, 41, 59, 0.8); 
-    --input: #0f172a; 
-    --text: #f8fafc; 
-    --text-dim: #94a3b8; 
-    --accent: #fbbf24; 
-    --danger: #f87171; 
-    --border: #334155; 
-    --nav-width: 85px; 
-  }
-  
+  :root { --bg: #0f172a; --card: rgba(30, 41, 59, 0.8); --input: #0f172a; --text: #f8fafc; --text-dim: #94a3b8; --accent: #fbbf24; --danger: #f87171; --border: #334155; --nav-width: 85px; }
   * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, sans-serif; }
-  
-  body { 
-    background: var(--bg); color: var(--text); display: flex; min-height: 100vh; overflow: auto;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='0.9em' font-size='75' opacity='0.04' fill='%23fbbf24'%3E👨‍🍳%3C/text%3E%3C/svg%3E");
-    background-repeat: no-repeat; background-position: center 70%; background-size: 280px;
-  }
-  
-  .nav-sidebar { 
-    width: var(--nav-width); background: #1e293b; border-right: 1px solid var(--border); 
-    display: flex; flex-direction: column; align-items: center; padding: 30px 0; 
-    position: fixed; top: 0; bottom: 0; left: 0; z-index: 100; 
-  }
-  
-  .tab { 
-    width: 65px; height: 65px; border: none; background: none; color: var(--text-dim); 
-    border-radius: 20px; font-size: 1.6rem; display: flex; align-items: center; 
-    justify-content: center; margin-bottom: 30px; cursor: pointer; position: relative;
-  }
-  
+  body { background: var(--bg); color: var(--text); display: flex; min-height: 100vh; overflow: auto; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='0.9em' font-size='75' opacity='0.04' fill='%23fbbf24'%3E👨‍🍳%3C/text%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: center 70%; background-size: 280px; }
+  .nav-sidebar { width: var(--nav-width); background: #1e293b; border-right: 1px solid var(--border); display: flex; flex-direction: column; align-items: center; padding: 30px 0; position: fixed; top: 0; bottom: 0; left: 0; z-index: 100; }
+  .tab { width: 65px; height: 65px; border: none; background: none; color: var(--text-dim); border-radius: 20px; font-size: 1.6rem; display: flex; align-items: center; justify-content: center; margin-bottom: 30px; cursor: pointer; position: relative; }
   .tab.active { background: var(--accent); color: #0f172a; box-shadow: 0 10px 15px rgba(251, 191, 36, 0.3); }
   .tab-label { position: absolute; bottom: -12px; font-size: 0.65rem; font-weight: 800; color: inherit; text-transform: uppercase; }
-
   .main-content { flex: 1; margin-left: var(--nav-width); padding: 25px; overflow-y: auto; height: 100vh; }
-  
   header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }
   h1 { font-weight: 800; font-size: 2rem; color: var(--accent); }
-
   .sync-led { display: flex; align-items: center; gap: 8px; background: rgba(0,0,0,0.2); padding: 6px 12px; border-radius: 20px; font-size: 0.65rem; font-weight: 800; }
   .led { width: 10px; height: 10px; border-radius: 50%; background: #444; }
   .led.online { background: #4ade80; box-shadow: 0 0 8px #4ade80; }
-
   .card { background: var(--card); border-radius: 24px; padding: 20px; margin-bottom: 20px; border: 1px solid var(--border); backdrop-filter: blur(5px); }
   .stitle { font-size: 0.8rem; font-weight: 700; color: var(--accent); margin-bottom: 15px; text-transform: uppercase; }
-  
   input, select { width: 100%; padding: 15px; border-radius: 15px; border: 1px solid var(--border); background: var(--input); color: var(--text); font-size: 1rem; margin-bottom: 12px; }
-  
   .item { display: flex; align-items: center; gap: 15px; background: var(--card); padding: 16px; border-radius: 18px; margin-bottom: 10px; border: 1px solid var(--border); }
   .item.done { opacity: 0.3; }
   .iname { flex: 1; font-weight: 500; }
   .rayon-title { font-size: 0.8rem; font-weight: 800; margin: 25px 0 10px 5px; color: var(--text-dim); text-transform: uppercase; display: block; border-left: 3px solid var(--accent); padding-left: 10px; }
-  
-  .float-btn { 
-    position: fixed; bottom: 30px; right: 25px; left: calc(var(--nav-width) + 25px); 
-    background: var(--accent); color: #0f172a; border: none; border-radius: 18px; 
-    padding: 20px; font-weight: 800; font-size: 1rem; cursor: pointer; z-index: 50;
-  }
-
+  .float-btn { position: fixed; bottom: 30px; right: 25px; left: calc(var(--nav-width) + 25px); background: var(--accent); color: #0f172a; border: none; border-radius: 18px; padding: 20px; font-weight: 800; font-size: 1rem; cursor: pointer; z-index: 50; }
   .btn-del { background: none; border: none; color: var(--danger); font-size: 1.2rem; cursor: pointer; }
   .repas-card { margin-bottom: 15px; background: var(--card); border-radius: 20px; padding: 18px; border: 1px solid var(--border); }
 </style>
@@ -83,136 +44,88 @@
   </nav>
 
   <main class="main-content">
-    <header>
-      <h1>Repas</h1>
-      <div class="sync-led"><div id="statusLed" class="led"></div><span id="statusTxt">SYNC</span></div>
-    </header>
-
+    <header><h1>Repas</h1><div class="sync-led"><div id="statusLed" class="led"></div><span id="statusTxt">SYNC</span></div></header>
     <div id="section-courses">
       <div class="card">
         <div class="stitle">Nouveau produit</div>
-        <input type="text" id="artNom" placeholder="Nom de l'article..." autocomplete="off">
-        <div style="display:flex; gap:10px;">
-          <input type="text" id="artQty" placeholder="Qté" style="flex:0.4">
-          <select id="artCat" style="flex:1">
-            <option value="fruits">🥦 Fruits & Légumes</option>
-            <option value="viande">🥩 Boucherie</option>
-            <option value="frais">🧀 Produits Frais</option>
-            <option value="epicerie">🥫 Épicerie</option>
-            <option value="boissons">🥤 Boissons</option>
-            <option value="hygiene">🧴 Maison</option>
-            <option value="animaux">🐾 Animaux</option>
-            <option value="autre" selected>📦 Autre</option>
-          </select>
-        </div>
+        <input type="text" id="artNom" placeholder="Pommes, Poulet, Lait..." autocomplete="off">
+        <div style="display:flex; gap:10px;"><input type="text" id="artQty" placeholder="Qté" style="flex:0.4"><select id="artCat" style="flex:1">
+          <option value="fruits">🥦 Fruits & Légumes</option><option value="viande">🥩 Boucherie</option><option value="frais">🧀 Produits Frais</option><option value="epicerie">🥫 Épicerie</option><option value="boissons">🥤 Boissons</option><option value="hygiene">🧴 Maison</option><option value="animaux">🐾 Animaux</option><option value="autre" selected>📦 Autre</option>
+        </select></div>
       </div>
-      <div id="liste"></div>
-      <div style="height:100px;"></div> 
-      <button class="float-btn" onclick="ajouterArticle()">Ajouter à la liste</button>
+      <div id="liste"></div><div style="height:100px;"></div><button class="float-btn" onclick="ajouterArticle()">Ajouter à la liste</button>
     </div>
-
-    <div id="section-menu" style="display:none;">
-      <div id="semaineGrid"></div>
-      <div style="height:100px;"></div>
-      <button class="float-btn" onclick="sauverTout()">Enregistrer le menu</button>
-    </div>
+    <div id="section-menu" style="display:none;"><div id="semaineGrid"></div><div style="height:100px;"></div><button class="float-btn" onclick="sauverTout()">Enregistrer le menu</button></div>
   </main>
 
 <script>
-  firebase.initializeApp({
-    apiKey: "AIzaSyDUAAFwCscYGxoxRZodRjAtOXYhmhUNopg",
-    databaseURL: "https://compte-11a9c-default-rtdb.europe-west1.firebasedatabase.app/",
-    projectId: "compte-11a9c"
-  });
+  firebase.initializeApp({ apiKey: "AIzaSyDUAAFwCscYGxoxRZodRjAtOXYhmhUNopg", databaseURL: "https://compte-11a9c-default-rtdb.europe-west1.firebasedatabase.app/", projectId: "compte-11a9c" });
   var db = firebase.database();
 
-  function changerOnglet(target) {
-    if(target === 'courses') {
-      document.getElementById('section-courses').style.display = 'block';
-      document.getElementById('section-menu').style.display = 'none';
-      document.getElementById('btn-courses').classList.add('active');
-      document.getElementById('btn-menu').classList.remove('active');
-    } else {
-      document.getElementById('section-courses').style.display = 'none';
-      document.getElementById('section-menu').style.display = 'block';
-      document.getElementById('btn-courses').classList.remove('active');
-      document.getElementById('btn-menu').classList.add('active');
-      renderMenu();
+  const RAYONS = { fruits: {e:'🥦',l:'Fruits & Légumes',c:'#4ade80'}, viande: {e:'🥩',l:'Boucherie',c:'#f87171'}, frais: {e:'🧀',l:'Produits Frais',c:'#fbbf24'}, epicerie: {e:'🥫',l:'Épicerie',c:'#a78bfa'}, boissons: {e:'🥤',l:'Boissons',c:'#60a5fa'}, hygiene: {e:'🧴',l:'Maison',c:'#f472b6'}, animaux: {e:'🐾',l:'Animaux',c:'#fb923c'}, autre: {e:'📦',l:'Autre',c:'#94a3b8'} };
+
+  const DICTIONNAIRE = {
+    fruits: ['pomme','banane','tomate','salade','carotte','oignon','poireau','courgette','patate','pomme de terre','ail','echalote','avocat','citron','fraise','orange','poivron','concombre','brocoli','champignon','radis','asperge','aubergine','chou','epinard','haricot','lentille','melon','pasteque','peche','poire','raisin','kiwi','ananas','abricot','cerise','clementine','nectarine','prune','datte','figue','mangue'],
+    viande: ['poulet','steak','lardons','jambon','viande','boeuf','porc','saucisse','dinde','veau','agneau','haché','nuggets','salami','chorizo','pate','rillettes','magret','canard','pouls','poisson','saumon','cabillaud','thon','crevette','crabe','moule','huitre','gambas','truite','colin'],
+    frais: ['lait','oeuf','yaourt','fromage','beurre','crème','creme','emmental','gruyere','parmesan','mozzarella','camembert','comté','roquefort','chevre','beurre doux','beurre demi-sel','creme fraiche','margarine','skyr','petit suisse','fromage blanc','levure'],
+    epicerie: ['pates','riz','sel','sucre','farine','huile','conserve','gateau','biscuit','chocolat','pate a tartiner','miel','confiture','cereales','chips','apero','mayonnaise','ketchup','moutarde','vinaigre','pesto','sauce tomate','couscous','quinoa','pates alphabet','spaghetti','coquillette','penne','fusilli','tortellini','lasagne','farfalle','bouillon','epices','curry','poivre','sucre vanillé','levure chimique','noix','amande','noisette','cacahuete','olive','cornichon'],
+    boissons: ['eau','jus','soda','bière','biere','vin','café','cafe','thé','the','coca','perrier','sirop','limonade','iced tea','tisane','capsule','lait de soja','lait d amande','sprite','fanta','oasis'],
+    hygiene: ['savon','PQ','papier','lessive','shampoing','dentifrice','douche','deodorant','rasoir','mouchoir','essuie-tout','sopalin','liquide vaisselle','eponge','sac poubelle','nettoyant','javel','adoucissant','couches','coton','serviette','tampon','brosse a dent','gel','cire'],
+    animaux: ['croquettes','pâtée','litière','chat','chien','lapin','graine','os','friandise']
+  };
+
+  document.getElementById('artNom').addEventListener('input', (e) => {
+    const s = e.target.value.toLowerCase();
+    for (const [c, m] of Object.entries(DICTIONNAIRE)) {
+      if (m.some(mot => s.includes(mot))) { document.getElementById('artCat').value = c; break; }
     }
+  });
+
+  function changerOnglet(t) {
+    document.getElementById('section-courses').style.display = t==='courses'?'block':'none';
+    document.getElementById('section-menu').style.display = t==='menu'?'block':'none';
+    document.getElementById('btn-courses').classList.toggle('active', t==='courses');
+    document.getElementById('btn-menu').classList.toggle('active', t==='menu');
+    if(t==='menu') renderMenu();
   }
 
   db.ref(".info/connected").on("value", s => {
-    document.getElementById('statusLed').className = s.val() ? "led online" : "led";
-    document.getElementById('statusTxt').textContent = s.val() ? "CLOUD OK" : "OFFLINE";
+    document.getElementById('statusLed').className = s.val()?"led online":"led";
+    document.getElementById('statusTxt').textContent = s.val()?"CLOUD OK":"OFFLINE";
   });
 
-  const RAYONS = {
-    fruits: {e:'🥦',l:'Fruits & Légumes',c:'#4ade80'},
-    viande: {e:'🥩',l:'Boucherie',c:'#f87171'},
-    frais: {e:'🧀',l:'Produits Frais',c:'#fbbf24'},
-    epicerie: {e:'🥫',l:'Épicerie',c:'#a78bfa'},
-    boissons: {e:'🥤',l:'Boissons',c:'#60a5fa'},
-    hygiene: {e:'🧴',l:'Maison',c:'#f472b6'},
-    animaux: {e:'🐾',l:'Animaux',c:'#fb923c'},
-    autre: {e:'📦',l:'Autre',c:'#94a3b8'}
-  };
-
-  db.ref('maison_courses').on('value', s => {
-    let art = []; 
-    s.forEach(c => art.push({...c.val(), key:c.key}));
-    
-    let grp = {};
-    // Initialiser les groupes pour respecter l'ordre du dictionnaire
-    Object.keys(RAYONS).forEach(r => grp[r] = []);
-    
-    // Trier les articles dans les groupes
-    art.forEach(a => { 
-      let cat = a.cat || 'autre';
-      if(!grp[cat]) grp[cat] = [];
-      grp[cat].push(a); 
-    });
-    
-    let h = ''; 
-    // On boucle sur RAYONS pour l'ordre d'affichage
-    for (const [id, info] of Object.entries(RAYONS)) {
-      if (grp[id] && grp[id].length > 0) {
-        h += `<div class="rayon-title" style="color:${info.c}">${info.e} ${info.l}</div>`;
-        grp[id].forEach(a => {
-          h += `<div class="item ${a.checked?'done':''}">
-            <input type="checkbox" ${a.checked?'checked':''} onchange="db.ref('maison_courses/${a.key}').update({checked:!${a.checked}})" style="width:24px;height:24px;flex-shrink:0;">
-            <span class="iname">${a.nom}${a.qty?' <small style="color:var(--text-dim)">× '+a.qty+'</small>':''}</span>
-            <button class="btn-del" onclick="db.ref('maison_courses/${a.key}').remove()">✕</button></div>`;
-        });
-      }
+  db.ref('maison_courses').on('value', snap => {
+    let grp = {}; Object.keys(RAYONS).forEach(k => grp[k] = "");
+    if(snap.exists()){
+      snap.forEach(c => {
+        const i = c.val(); const k = c.key; const cat = i.cat||'autre';
+        grp[cat] += `<div class="item ${i.checked?'done':''}">
+          <input type="checkbox" ${i.checked?'checked':''} onchange="db.ref('maison_courses/${k}').update({checked:!${i.checked}})" style="width:24px;height:24px;flex-shrink:0;">
+          <span class="iname">${i.nom}${i.qty?' <small style="color:var(--text-dim)">× '+i.qty+'</small>':''}</span>
+          <button class="btn-del" onclick="db.ref('maison_courses/${k}').remove()">✕</button></div>`;
+      });
     }
-
-    const mainContent = document.querySelector('.main-content');
-    const scrollPos = mainContent ? mainContent.scrollTop : 0;
+    let h = ""; Object.keys(RAYONS).forEach(k => { if(grp[k]!=="") h += `<div class="rayon-title" style="color:${RAYONS[k].c}">${RAYONS[k].e} ${RAYONS[k].l}</div>` + grp[k]; });
+    const m = document.querySelector('.main-content'); const p = m.scrollTop;
     document.getElementById('liste').innerHTML = h || '<p style="text-align:center;padding:20px;">Vide</p>';
-    if (mainContent) mainContent.scrollTop = scrollPos;
+    m.scrollTop = p;
   });
 
   function ajouterArticle(){
-    let n = document.getElementById('artNom').value.trim(); 
-    if(!n) return;
-    db.ref('maison_courses').push({
-      nom:n, 
-      qty:document.getElementById('artQty').value, 
-      cat:document.getElementById('artCat').value, 
-      checked:false
+    const n = document.getElementById('artNom'); const q = document.getElementById('artQty'); const c = document.getElementById('artCat');
+    if(!n.value.trim()) return;
+    db.ref('maison_courses').push({nom:n.value.trim(), qty:q.value, cat:c.value, checked:false}).then(() => {
+      n.value=''; q.value=''; c.value='autre'; n.focus();
     });
-    document.getElementById('artNom').value=''; 
-    document.getElementById('artQty').value='';
-    document.getElementById('artNom').focus();
   }
 
   function renderMenu() {
     db.ref('maison_menu').once('value', s => {
-      let data = s.val() || {}; let h = '';
+      let d = s.val() || {}; let h = '';
       ['Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi','Dimanche'].forEach((j,i) => {
         h += `<div class="repas-card"><div class="stitle">${j}</div>
-        <input id="m${i}" value="${data[j]?.midi||''}" placeholder="🌞 MIDI">
-        <input id="s${i}" value="${data[j]?.soir||''}" placeholder="🌙 SOIR"></div>`;
+        <input id="m${i}" value="${d[j]?.midi||''}" placeholder="🌞 MIDI">
+        <input id="s${i}" value="${d[j]?.soir||''}" placeholder="🌙 SOIR"></div>`;
       });
       document.getElementById('semaineGrid').innerHTML = h;
     });
