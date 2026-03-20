@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>Repas Maison</title>
+<link rel="icon" type="image/png" href="icon.png">
+<link rel="apple-touch-icon" href="icon.png">
+<meta name="theme-color" content="#fbbf24">
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<style>
+  :root { 
+    --bg: #0f172a; 
+    --card: rgba(30, 41, 59, 0.8); 
+    --input: #0f172a; 
+    --text: #f8fafc; 
+    --text-dim: #94a3b8; 
+    --accent: #fbbf24; 
+    --danger: #f87171; 
+    --border: #334155; 
+    --nav-width: 85px; 
+  }
+  
+  * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, sans-serif; }
+  
+  body { 
+    background: var(--bg); color: var(--text); display: flex; min-height: 100vh; overflow: hidden;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='0.9em' font-size='75' opacity='0.04' fill='%23fbbf24'%3E👨‍🍳%3C/text%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: center 70%; background-size: 280px;
+  }
+  
+  /* Navigation */
+  .nav-sidebar { 
+    width: var(--nav-width); background: #1e293b; border-right: 1px solid var(--border); 
+    display: flex; flex-direction: column; align-items: center; padding: 30px 0; 
+    position: fixed; top: 0; bottom: 0; left: 0; z-index: 100; 
+  }
+  
+  .tab { 
+    width: 65px; height: 65px; border: none; background: none; color: var(--text-dim); 
+    border-radius: 20px; font-size: 1.6rem; display: flex; align-items: center; 
+    justify-content: center; margin-bottom: 30px; cursor: pointer; position: relative;
+  }
+  
+  .tab.active { background: var(--accent); color: #0f172a; box-shadow: 0 10px 15px rgba(251, 191, 36, 0.3); }
+  .tab-label { position: absolute; bottom: -12px; font-size: 0.65rem; font-weight: 800; color: inherit; text-transform: uppercase; }
+
+  .main-content { flex: 1; margin-left: var(--nav-width); padding: 25px; overflow-y: auto; height: 100vh; }
+  
+  header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }
+  h1 { font-weight: 800; font-size: 2rem; color: var(--accent); }
+
+  .sync-led { display: flex; align-items: center; gap: 8px; background: rgba(0,0,0,0.2); padding: 6px 12px; border-radius: 20px; font-size: 0.65rem; font-weight: 800; }
+  .led { width: 10px; height: 10px; border-radius: 50%; background: #444; }
+  .led.online { background: #4ade80; box-shadow: 0 0 8px #4ade80; }
+
+  /* Éléments de liste */
+  .card { background: var(--card); border-radius: 24px; padding: 20px; margin-bottom: 20px; border: 1px solid var(--border); backdrop-filter: blur(5px); }
+  .stitle { font-size: 0.8rem; font-weight: 700; color: var(--accent); margin-bottom: 15px; text-transform: uppercase; }
+  
+  input, select { width: 100%; padding: 15px; border-radius: 15px; border: 1px solid var(--border); background: var(--input); color: var(--text); font-size: 1rem; margin-bottom: 12px; }
+  
+  .item { display: flex; align-items: center; gap: 15px; background: var(--card); padding: 16px; border-radius: 18px; margin-bottom: 10px; border: 1px solid var(--border); }
+  .item.done { opacity: 0.3; }
+  .iname { flex: 1; font-weight: 500; }
+  .rayon-title { font-size: 0.8rem; font-weight: 800; margin: 25px 0 10px 5px; color: var(--text-dim); text-transform: uppercase; display: block; border-left: 3px solid var(--accent); padding-left: 10px; }
+  
+  .float-btn { 
+    position: fixed; bottom: 30px; right: 25px; left: calc(var(--nav-width) + 25px); 
+    background: var(--accent); color: #0f172a; border: none; border-radius: 18px; 
+    padding: 20px; font-weight: 800; font-size: 1rem; cursor: pointer; z-index: 50;
+  }
+
+  .btn-del { background: none; border: none; color: var(--danger); font-size: 1.2rem; cursor: pointer; }
+  .repas-card { margin-bottom: 15px; background: var(--card); border-radius: 20px; padding: 18px; border: 1px solid var(--border); }
+</style>
+</head>
+<body>
+
+  <nav class="nav-sidebar">
+    <div class="tab active" id="btn-courses" onclick="changerOnglet('courses')">🛒<span class="tab-label">Courses</span></div>
+    <div class="tab" id="btn-menu" onclick="changerOnglet('menu')">🍽️<span class="tab-label">Menu</span></div>
+  </nav>
+
+  <main class="main-content">
+    <header>
+      <h1>Repas</h1>
+      <div class="sync-led"><div id="statusLed" class="led"></div><span id="statusTxt">SYNC</span></div>
+    </header>
+
+    <div id="section-courses">
+      <div class="card">
+        <div class="stitle">Nouveau produit</div>
+        <input type="text" id="artNom" placeholder="Nom de l'article..." autocomplete="off">
+        <div style="display:flex; gap:10px;">
+          <input type="text" id="artQty" placeholder="Qté" style="flex:0.4">
+          <select id="artCat" style="flex:1">
+            <option value="fruits">🥦 Fruits & Légumes</option>
+            <option value="viande">🥩 Boucherie</option>
+            <option value="frais">🧀 Produits Frais</option>
+            <option value="epicerie">🥫 Épicerie</option>
+            <option value="boissons">🥤 Boissons</option>
+            <option value="hygiene">🧴 Maison</option>
+            <option value="animaux">🐾 Animaux</option>
+            <option value="autre" selected>📦 Autre</option>
+          </select>
+        </div>
+      </div>
+      <div id="liste"></div>
+      <div style="height:100px;"></div> <button class="float-btn" onclick="ajouterArticle()">Ajouter à la liste</button>
+    </div>
+
+    <div id="section-menu" style="display:none;">
+      <div id="semaineGrid"></div>
+      <div style="height:100px;"></div>
+      <button class="float-btn" onclick="sauverTout()">Enregistrer le menu</button>
+    </div>
+  </main>
+
+<script>
+  firebase.initializeApp({
+    apiKey: "AIzaSyDUAAFwCscYGxoxRZodRjAtOXYhmhUNopg",
+    databaseURL: "https://compte-11a9c-default-rtdb.europe-west1.firebasedatabase.app/",
+    projectId: "compte-11a9c"
+  });
+  var db = firebase.database();
+
+  // Navigation corrigée
+  function changerOnglet(target) {
+    if(target === 'courses') {
+      document.getElementById('section-courses').style.display = 'block';
+      document.getElementById('section-menu').style.display = 'none';
+      document.getElementById('btn-courses').classList.add('active');
+      document.getElementById('btn-menu').classList.remove('active');
+    } else {
+      document.getElementById('section-courses').style.display = 'none';
+      document.getElementById('section-menu').style.display = 'block';
+      document.getElementById('btn-courses').classList.remove('active');
+      document.getElementById('btn-menu').classList.add('active');
+      renderMenu();
+    }
+  }
+
+  // Synchro LED
+  db.ref(".info/connected").on("value", s => {
+    document.getElementById('statusLed').className = s.val() ? "led online" : "led";
+    document.getElementById('statusTxt').textContent = s.val() ? "CLOUD OK" : "OFFLINE";
+  });
+
+  const RAYONS = {
+    fruits: {e:'🥦',l:'Fruits & Légumes',c:'#4ade80'},
+    viande: {e:'🥩',l:'Boucherie',c:'#f87171'},
+    frais: {e:'🧀',l:'Produits Frais',c:'#fbbf24'},
+    epicerie: {e:'🥫',l:'Épicerie',c:'#a78bfa'},
+    boissons: {e:'🥤',l:'Boissons',c:'#60a5fa'},
+    hygiene: {e:'🧴',l:'Maison',c:'#f472b6'},
+    animaux: {e:'🐾',l:'Animaux',c:'#fb923c'},
+    autre: {e:'📦',l:'Autre',c:'#94a3b8'}
+  };
+
+  // Chargement Liste avec Catégories
+  db.ref('maison_courses').on('value', s => {
+    let art = []; s.forEach(c => art.push({...c.val(), key:c.key}));
+    let h = ''; let grp = {};
+    
+    // Regrouper par catégorie
+    art.forEach(a => { if(!grp[a.cat]) grp[a.cat]=[]; grp[a.cat].push(a); });
+    
+    Object.keys(grp).sort().forEach(c => {
+      h += `<div class="rayon-title" style="color:${RAYONS[c].c}">${RAYONS[c].e} ${RAYONS[c].l}</div>`;
+      grp[c].forEach(a => {
+        h += `<div class="item ${a.checked?'done':''}">
+          <input type="checkbox" ${a.checked?'checked':''} onchange="db.ref('maison_courses/${a.key}').update({checked:!${a.checked}})" style="width:24px;height:24px;">
+          <span class="iname">${a.nom}</span>
+          <button class="btn-del" onclick="db.ref('maison_courses/${a.key}').remove()">✕</button></div>`;
+      });
+    });
+    document.getElementById('liste').innerHTML = h || '<p style="text-align:center;padding:20px;">Vide</p>';
+  });
+
+  function ajouterArticle(){
+    let n = document.getElementById('artNom').value.trim(); if(!n) return;
+    db.ref('maison_courses').push({nom:n, qty:document.getElementById('artQty').value, cat:document.getElementById('artCat').value, checked:false});
+    document.getElementById('artNom').value=''; document.getElementById('artQty').value='';
+  }
+
+  function renderMenu() {
+    db.ref('maison_menu').once('value', s => {
+      let data = s.val() || {}; let h = '';
+      ['Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi','Dimanche'].forEach((j,i) => {
+        h += `<div class="repas-card"><div class="stitle">${j}</div>
+        <input id="m${i}" value="${data[j]?.midi||''}" placeholder="🌞 MIDI">
+        <input id="s${i}" value="${data[j]?.soir||''}" placeholder="🌙 SOIR"></div>`;
+      });
+      document.getElementById('semaineGrid').innerHTML = h;
+    });
+  }
+
+  function sauverTout() {
+    ['Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi','Dimanche'].forEach((j,i) => {
+      db.ref('maison_menu/'+j).set({midi:document.getElementById('m'+i).value, soir:document.getElementById('s'+i).value});
+    });
+    alert('Enregistré !');
+  }
+</script>
+</body>
+</html>
