@@ -31,7 +31,6 @@
     background-repeat: no-repeat; background-position: center 70%; background-size: 280px;
   }
   
-  /* Navigation */
   .nav-sidebar { 
     width: var(--nav-width); background: #1e293b; border-right: 1px solid var(--border); 
     display: flex; flex-direction: column; align-items: center; padding: 30px 0; 
@@ -56,7 +55,6 @@
   .led { width: 10px; height: 10px; border-radius: 50%; background: #444; }
   .led.online { background: #4ade80; box-shadow: 0 0 8px #4ade80; }
 
-  /* Éléments de liste */
   .card { background: var(--card); border-radius: 24px; padding: 20px; margin-bottom: 20px; border: 1px solid var(--border); backdrop-filter: blur(5px); }
   .stitle { font-size: 0.8rem; font-weight: 700; color: var(--accent); margin-bottom: 15px; text-transform: uppercase; }
   
@@ -109,7 +107,8 @@
         </div>
       </div>
       <div id="liste"></div>
-      <div style="height:100px;"></div> <button class="float-btn" onclick="ajouterArticle()">Ajouter à la liste</button>
+      <div style="height:100px;"></div> 
+      <button class="float-btn" onclick="ajouterArticle()">Ajouter à la liste</button>
     </div>
 
     <div id="section-menu" style="display:none;">
@@ -127,7 +126,6 @@
   });
   var db = firebase.database();
 
-  // Navigation corrigée
   function changerOnglet(target) {
     if(target === 'courses') {
       document.getElementById('section-courses').style.display = 'block';
@@ -143,7 +141,6 @@
     }
   }
 
-  // Synchro LED
   db.ref(".info/connected").on("value", s => {
     document.getElementById('statusLed').className = s.val() ? "led online" : "led";
     document.getElementById('statusTxt').textContent = s.val() ? "CLOUD OK" : "OFFLINE";
@@ -160,35 +157,53 @@
     autre: {e:'📦',l:'Autre',c:'#94a3b8'}
   };
 
-  // Chargement Liste avec Catégories
   db.ref('maison_courses').on('value', s => {
-    let art = []; s.forEach(c => art.push({...c.val(), key:c.key}));
-    let h = ''; let grp = {};
+    let art = []; 
+    s.forEach(c => art.push({...c.val(), key:c.key}));
     
-    // Regrouper par catégorie
-    art.forEach(a => { if(!grp[a.cat]) grp[a.cat]=[]; grp[a.cat].push(a); });
+    let grp = {};
+    // Initialiser les groupes pour respecter l'ordre du dictionnaire
+    Object.keys(RAYONS).forEach(r => grp[r] = []);
     
-    Object.keys(grp).sort().forEach(c => {
-      h += `<div class="rayon-title" style="color:${RAYONS[c].c}">${RAYONS[c].e} ${RAYONS[c].l}</div>`;
-      grp[c].forEach(a => {
-        h += `<div class="item ${a.checked?'done':''}">
-          <input type="checkbox" ${a.checked?'checked':''} onchange="db.ref('maison_courses/${a.key}').update({checked:!${a.checked}})" style="width:24px;height:24px;flex-shrink:0;">
-          <span class="iname">${a.nom}${a.qty?' <small style="color:var(--text-dim)">× '+a.qty+'</small>':''}</span>
-          <button class="btn-del" onclick="db.ref('maison_courses/${a.key}').remove()">✕</button></div>`;
-      });
+    // Trier les articles dans les groupes
+    art.forEach(a => { 
+      let cat = a.cat || 'autre';
+      if(!grp[cat]) grp[cat] = [];
+      grp[cat].push(a); 
     });
-    // Sauvegarde la position de scroll avant de re-render
+    
+    let h = ''; 
+    // On boucle sur RAYONS pour l'ordre d'affichage
+    for (const [id, info] of Object.entries(RAYONS)) {
+      if (grp[id] && grp[id].length > 0) {
+        h += `<div class="rayon-title" style="color:${info.c}">${info.e} ${info.l}</div>`;
+        grp[id].forEach(a => {
+          h += `<div class="item ${a.checked?'done':''}">
+            <input type="checkbox" ${a.checked?'checked':''} onchange="db.ref('maison_courses/${a.key}').update({checked:!${a.checked}})" style="width:24px;height:24px;flex-shrink:0;">
+            <span class="iname">${a.nom}${a.qty?' <small style="color:var(--text-dim)">× '+a.qty+'</small>':''}</span>
+            <button class="btn-del" onclick="db.ref('maison_courses/${a.key}').remove()">✕</button></div>`;
+        });
+      }
+    }
+
     const mainContent = document.querySelector('.main-content');
     const scrollPos = mainContent ? mainContent.scrollTop : 0;
     document.getElementById('liste').innerHTML = h || '<p style="text-align:center;padding:20px;">Vide</p>';
-    // Restaure la position de scroll après le re-render
     if (mainContent) mainContent.scrollTop = scrollPos;
   });
 
   function ajouterArticle(){
-    let n = document.getElementById('artNom').value.trim(); if(!n) return;
-    db.ref('maison_courses').push({nom:n, qty:document.getElementById('artQty').value, cat:document.getElementById('artCat').value, checked:false});
-    document.getElementById('artNom').value=''; document.getElementById('artQty').value='';
+    let n = document.getElementById('artNom').value.trim(); 
+    if(!n) return;
+    db.ref('maison_courses').push({
+      nom:n, 
+      qty:document.getElementById('artQty').value, 
+      cat:document.getElementById('artCat').value, 
+      checked:false
+    });
+    document.getElementById('artNom').value=''; 
+    document.getElementById('artQty').value='';
+    document.getElementById('artNom').focus();
   }
 
   function renderMenu() {
