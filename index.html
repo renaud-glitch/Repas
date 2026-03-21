@@ -8,8 +8,11 @@
 <link rel="apple-touch-icon" href="icon.png">
 <meta name="theme-color" content="#fbbf24">
 <link rel="manifest" href="manifest.json">
+
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
 <style>
   :root { --bg: #0f172a; --card: rgba(30, 41, 59, 0.8); --input: #0f172a; --text: #f8fafc; --text-dim: #94a3b8; --accent: #fbbf24; --danger: #f87171; --border: #334155; --nav-width: 85px; }
   * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, sans-serif; }
@@ -57,19 +60,29 @@
   // Force le rafraîchissement du code
   if (!window.location.search.includes('v=')) window.location.replace(window.location.href + '?v=' + Date.now());
 
-  firebase.initializeApp({ apiKey: "AIzaSyDUAAFwCscYGxoxRZodRjAtOXYhmhUNopg", databaseURL: "https://compte-11a9c-default-rtdb.europe-west1.firebasedatabase.app/", projectId: "compte-11a9c" });
-  var db = firebase.database();
+  // INITIALISATION
+  firebase.initializeApp({ 
+    apiKey: "AIzaSyDUAAFwCscYGxoxRZodRjAtOXYhmhUNopg", 
+    databaseURL: "https://compte-11a9c-default-rtdb.europe-west1.firebasedatabase.app/", 
+    projectId: "compte-11a9c" 
+  });
+
+  const db = firebase.database();
+  const auth = firebase.auth();
+
+  // CONNEXION ANONYME (Sécurité)
+  auth.signInAnonymously()
+    .then(() => { console.log("🔒 Connecté en mode privé"); })
+    .catch((error) => { console.error("Erreur Auth:", error.message); });
 
   const RAYONS = { fruits:{e:'🥦',l:'Fruits & Légumes',c:'#4ade80'}, viande:{e:'🥩',l:'Boucherie',c:'#f87171'}, frais:{e:'🧀',l:'Produits Frais',c:'#fbbf24'}, epicerie:{e:'🥫',l:'Épicerie',c:'#a78bfa'}, boissons:{e:'🥤',l:'Boissons',c:'#60a5fa'}, hygiene:{e:'🧴',l:'Maison',c:'#f472b6'}, animaux:{e:'🐾',l:'Animaux',c:'#fb923c'}, autre:{e:'📦',l:'Autre',c:'#94a3b8'} };
   const DICT = { fruits:['pomme','banane','tomate','salade','carotte','oignon','ail','avocat','poivron','concombre'], viande:['poulet','steak','lardons','jambon','viande','poisson'], frais:['lait','oeuf','yaourt','fromage','beurre','crème','skyr'], epicerie:['pates','riz','sel','sucre','farine','huile','chips','chocolat'], boissons:['eau','jus','soda','biere','vin','cafe'], hygiene:['savon','pq','papier','lessive','dentifrice','sopalin'], animaux:['croquettes','litiere'] };
 
-  // Dictionnaire intelligent
   document.getElementById('artNom').addEventListener('input', (e) => {
     const s = e.target.value.toLowerCase();
     for (const [c, m] of Object.entries(DICT)) { if (m.some(mot => s.includes(mot))) { document.getElementById('artCat').value = c; break; } }
   });
 
-  // Mise à jour du Badge (le "1" sur l'icône)
   function updateBadge(n) {
     if ('setAppBadge' in navigator) {
       if (n > 0) navigator.setAppBadge(n).catch(() => {});
@@ -77,27 +90,32 @@
     }
   }
 
-  db.ref('maison_courses').on('value', snap => {
-    let grp = {}; Object.keys(RAYONS).forEach(k => grp[k] = "");
-    let count = 0;
-    if(snap.exists()){
-      snap.forEach(c => {
-        const i = c.val(); 
-        if(!i.checked) count++; // On compte uniquement les articles NON cochés
-        grp[i.cat||'autre'] += `<div class="item ${i.checked?'done':''}">
-          <input type="checkbox" ${i.checked?'checked':''} onchange="db.ref('maison_courses/${c.key}').update({checked:!${i.checked}})">
-          <span class="iname">${i.nom}${i.qty?' <small>× '+i.qty+'</small>':''}</span>
-          <button class="btn-del" onclick="db.ref('maison_courses/${c.key}').remove()">✕</button></div>`;
+  // ÉCOUTE DES DONNÉES (Uniquement si connecté)
+  auth.onAuthStateChanged((user) => {
+    if (user) {
+      db.ref('maison_courses').on('value', snap => {
+        let grp = {}; Object.keys(RAYONS).forEach(k => grp[k] = "");
+        let count = 0;
+        if(snap.exists()){
+          snap.forEach(c => {
+            const i = c.val(); 
+            if(!i.checked) count++;
+            grp[i.cat||'autre'] += `<div class="item ${i.checked?'done':''}">
+              <input type="checkbox" ${i.checked?'checked':''} onchange="db.ref('maison_courses/${c.key}').update({checked:!${i.checked}})">
+              <span class="iname">${i.nom}${i.qty?' <small>× '+i.qty+'</small>':''}</span>
+              <button class="btn-del" onclick="db.ref('maison_courses/${c.key}').remove()">✕</button></div>`;
+          });
+        }
+        updateBadge(count);
+        let h = ""; Object.keys(RAYONS).forEach(k => { if(grp[k]!=="") h += `<div class="rayon-title" style="color:${RAYONS[k].c}">${RAYONS[k].e} ${RAYONS[k].l}</div>` + grp[k]; });
+        document.getElementById('liste').innerHTML = h || '<p style="text-align:center;padding:20px;">Vide</p>';
       });
     }
-    updateBadge(count); // Met à jour le "petit 1" sur l'écran d'accueil
-    let h = ""; Object.keys(RAYONS).forEach(k => { if(grp[k]!=="") h += `<div class="rayon-title" style="color:${RAYONS[k].c}">${RAYONS[k].e} ${RAYONS[k].l}</div>` + grp[k]; });
-    document.getElementById('liste').innerHTML = h || '<p style="text-align:center;padding:20px;">Vide</p>';
   });
 
   function ajouterArticle(){
     const n = document.getElementById('artNom'); const q = document.getElementById('artQty'); const c = document.getElementById('artCat');
-    if(!n.value.trim()) return;
+    if(!n.value.trim() || !auth.currentUser) return;
     db.ref('maison_courses').push({nom:n.value.trim(), qty:q.value, cat:c.value, checked:false});
     n.value=''; q.value=''; c.value='autre'; n.focus();
   }
@@ -113,6 +131,7 @@
   db.ref(".info/connected").on("value", s => document.getElementById('statusLed').className = s.val()?"led online":"led");
 
   function renderMenu() {
+    if(!auth.currentUser) return;
     db.ref('maison_menu').once('value', s => {
       let d = s.val() || {}; let h = '';
       ['Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi','Dimanche'].forEach((j,i) => {
@@ -123,6 +142,7 @@
   }
 
   function sauverTout() {
+    if(!auth.currentUser) return;
     ['Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi','Dimanche'].forEach((j,i) => {
       db.ref('maison_menu/'+j).set({midi:document.getElementById('m'+i).value, soir:document.getElementById('s'+i).value});
     });
