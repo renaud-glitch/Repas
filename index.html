@@ -49,6 +49,9 @@
           <option value="fruits">🥦 Fruits & Légumes</option><option value="viande">🥩 Boucherie</option><option value="frais">🧀 Produits Frais</option><option value="epicerie">🥫 Épicerie</option><option value="boissons">🥤 Boissons</option><option value="hygiene">🧴 Maison</option><option value="animaux">🐾 Animaux</option><option value="autre" selected>📦 Autre</option>
         </select></div>
       </div>
+      <button onclick="nettoyerListe()" style="width:100%; background:rgba(248,113,113,0.1); color:var(--danger); border:1px solid var(--danger);         padding:10px; border-radius:15px; margin-bottom:15px; font-weight:bold; cursor:pointer;">
+        🗑️ Vider les articles cochés
+      </button>
       <div id="liste"></div><div style="height:100px;"></div><button class="float-btn" onclick="ajouterArticle()">Ajouter à la liste</button>
     </div>
     <div id="section-menu" style="display:none;"><div id="semaineGrid"></div><div style="height:100px;"></div><button class="float-btn" onclick="sauverTout()">Enregistrer le menu</button></div>
@@ -124,12 +127,24 @@
     });
   }
 
-  function sauverTout() {
+function sauverTout() {
     ['Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi','Dimanche'].forEach((j,i) => {
       db.ref('maison_menu/'+j).set({midi:document.getElementById('m'+i).value, soir:document.getElementById('s'+i).value});
     });
     alert('Menu enregistré !');
   }
+
+  function nettoyerListe() {
+    if (confirm("Supprimer les articles cochés ?")) {
+      db.ref('maison_courses').once('value', snap => {
+        snap.forEach(enfant => {
+          if (enfant.val().checked) {
+            db.ref('maison_courses/' + enfant.key).remove();
+          }
+        });
+      });
+    } // <-- Il manquait celle-ci pour fermer le "if (confirm..."
+  } // <-- Et celle-là pour fermer la fonction "nettoyerListe"
 </script>
 </body>
 </html>
